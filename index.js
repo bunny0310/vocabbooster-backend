@@ -24,7 +24,7 @@ app.get('/api/words', (req,res)=>{
         for(let row of rows)
         {
             console.log(row.word_json);
-            wordlist.push(JSON.parse(row.word_json));
+            wordlist.addWord(JSON.parse(row.word_json));
 
         }
     });
