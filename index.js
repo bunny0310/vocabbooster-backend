@@ -22,17 +22,29 @@ app.get('/api/words', (req,res)=>{
         asyncQueryMethod("SELECT word_json FROM words").then(rows=>{
             for(let row of rows)
             {
-                wordlist.addWord(JSON.parse(JSON.stringify(row.word_json))); //hack
+                const word = JSON.parse(row.word_json);
+                wordlist.addWord(word); //hack
             }
-            console.log(rows);
             return res.status(200).json({data: wordlist.list});
+        }).catch((error)=>{
+            console.log(error);
         });
 });
 app.post('/api/add-word', (req,res)=>{
     const word = req.body.word;
-    wordlist.addWord(word);
-    const word_json = JSON.stringify(word).replace(/[\/\(\)\']/g, "\\$&");
-    asyncQueryMethod("INSERT INTO words (word_json) VALUES ('"+word_json+"')");
+    const word_main = new Word({
+        name: word.name,
+        meaning: word.meaning,
+        sentence: word.sentence,
+        tags: word.tags,
+        synonyms: word.synonyms,
+        types: word.types
+    });
+    wordlist.addWord(word_main);
+    const word_json = JSON.stringify(word_main);
+    asyncQueryMethod("INSERT INTO words (word_json) VALUES ('"+word_json+"')").catch((error)=>{
+      console.log(error);
+    });
     return res.status(200).json({"word added!":"awesome"});
 });
 
@@ -41,9 +53,12 @@ app.get('/api/random-words', (req,res)=>{
     asyncQueryMethod("SELECT word_json FROM words ORDER BY RAND() LIMIT 5").then(rows=>{
         for(let row of rows)
         {
-            random_words.addWord(JSON.parse(JSON.stringify(row.word_json)));
+            const word = JSON.parse(row.word_json);
+            random_words.addWord(word); //hack
         }
         return res.status(200).json({data: random_words.list});    
+    }).catch((error)=>{
+        console.log(error);
     });
 })
 

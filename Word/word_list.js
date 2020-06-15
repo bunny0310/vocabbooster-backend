@@ -1,4 +1,5 @@
 const {connection} = require("../config");
+const Word = require("./word");
 
 class WordList 
 {
@@ -10,8 +11,8 @@ class WordList
                 if(err)throw err;
                 for(let row of rows)
                 {
-                    const json_data = JSON.parse(JSON.stringify(row.word_json));
-                    this.list.push(json_data); //hack
+                    const word = JSON.parse(row.word_json);
+                    this.addWord(word); //hack
 
                 }
         });
