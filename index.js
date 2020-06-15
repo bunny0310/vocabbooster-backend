@@ -22,7 +22,7 @@ app.get('/api/words', (req,res)=>{
         asyncQueryMethod("SELECT word_json FROM words").then(rows=>{
             for(let row of rows)
             {
-                wordlist.addWord(JSON.parse(row.word_json));
+                wordlist.addWord(JSON.parse(JSON.stringify(row.word_json))); //hack
             }
             console.log(rows);
             return res.status(200).json({data: wordlist.list});
