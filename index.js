@@ -41,7 +41,7 @@ app.get('/api/random-words', (req,res)=>{
     asyncQueryMethod("SELECT word_json FROM words ORDER BY RAND() LIMIT 5").then(rows=>{
         for(let row of rows)
         {
-            random_words.addWord(JSON.parse(row.word_json));
+            random_words.addWord(JSON.parse(JSON.stringify(row.word_json)));
         }
         return res.status(200).json({data: random_words.list});    
     });
