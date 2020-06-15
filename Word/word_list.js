@@ -10,7 +10,8 @@ class WordList
                 if(err)throw err;
                 for(let row of rows)
                 {
-                    this.list.push(JSON.parse(row.word_json));
+                    const json_data = JSON.parse(JSON.stringify(row.word_json));
+                    this.list.push(json_data); //hack
 
                 }
         });
