@@ -11,7 +11,15 @@ class WordList
                 if(err)throw err;
                 for(let row of rows)
                 {
-                    const word = JSON.parse(row.word_json);
+                    const parsed_string = JSON.parse(row.word_json);
+                    const word = new Word({
+                        name: parsed_string.name,
+                        meaning: parsed_string.meaning,
+                        sentence: parsed_string.sentence,
+                        tags: parsed_string.tags,
+                        synonyms: parsed_string.synonyms,
+                        types: parsed_string.types
+                    });
                     this.addWord(word); //hack
 
                 }

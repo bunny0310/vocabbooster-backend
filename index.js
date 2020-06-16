@@ -31,7 +31,9 @@ app.get('/api/words', (req,res)=>{
         });
 });
 app.post('/api/add-word', (req,res)=>{
-    const word = req.body.word;
+    let word = req.body.word;
+    word=JSON.parse(word);
+    console.log(typeof word);
     const word_main = new Word({
         name: word.name,
         meaning: word.meaning,
@@ -40,6 +42,7 @@ app.post('/api/add-word', (req,res)=>{
         synonyms: word.synonyms,
         types: word.types
     });
+    //console.log(word_main);
     wordlist.addWord(word_main);
     const word_json = JSON.stringify(word_main);
     asyncQueryMethod("INSERT INTO words (word_json) VALUES ('"+word_json+"')").catch((error)=>{
