@@ -45,7 +45,7 @@ app.post('/api/add-word', (req,res)=>{
     });
     //console.log(word_main);
     wordlist.addWord(word_main);
-    const word_json = JSON.stringify(word_main).replace('\'', '\\\'');
+    const word_json = JSON.stringify(word_main);
     asyncQueryMethod("INSERT INTO words (word_json) VALUES ('"+word_json+"')").catch((error)=>{
       console.log(error);
     });
