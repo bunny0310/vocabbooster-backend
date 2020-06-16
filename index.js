@@ -33,7 +33,7 @@ app.get('/api/words', (req,res)=>{
 });
 app.post('/api/add-word', (req,res)=>{
     let word = req.body.word;
-    //word=parseJson(word);
+    word=parseJson(word);
     console.log(typeof word);
     const word_main = new Word({
         name: word.name,
