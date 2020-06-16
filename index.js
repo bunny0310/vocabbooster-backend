@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const body_parser = require("body-parser");
+const parseJson = require('parse-json');
 const mysql = require("mysql");
 const path = require("path");
 const Word = require("./Word/word");
@@ -22,7 +23,7 @@ app.get('/api/words', (req,res)=>{
         asyncQueryMethod("SELECT word_json FROM words").then(rows=>{
             for(let row of rows)
             {
-                const word = JSON.parse(row.word_json);
+                const word = parseJson(row.word_json);
                 wordlist.addWord(word); //hack
             }
             return res.status(200).json({data: wordlist.list});
@@ -32,7 +33,7 @@ app.get('/api/words', (req,res)=>{
 });
 app.post('/api/add-word', (req,res)=>{
     let word = req.body.word;
-    word=JSON.parse(word);
+    word=parseJson(word);
     console.log(typeof word);
     const word_main = new Word({
         name: word.name,
@@ -56,7 +57,7 @@ app.get('/api/random-words', (req,res)=>{
     asyncQueryMethod("SELECT word_json FROM words ORDER BY RAND() LIMIT 5").then(rows=>{
         for(let row of rows)
         {
-            const word = JSON.parse(row.word_json);
+            const word = parseJson(row.word_json);
             random_words.addWord(word); //hack
         }
         return res.status(200).json({data: random_words.list});    
