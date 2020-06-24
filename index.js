@@ -30,6 +30,7 @@ app.use(body_parser.json())
 app.use(express.static(path.join(__dirname,'/public')));
 app.use(passport.initialize());
 app.use(passport.session());
+app.set('trust proxy', 1);
 
 passport.use(new localStrategy((username,password,done)=>{
     asyncQueryMethod("SELECT * FROM users WHERE username = '"+username+"' AND password = '"+sha256(password)+"'")
