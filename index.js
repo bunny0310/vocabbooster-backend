@@ -9,14 +9,23 @@ const localStrategy =require("passport-local").Strategy;
 const path = require("path");
 const Word = require("./Word/word");
 const Wordlist = require("./Word/word_list");
+const Friends = require("./Graph/friends");
 const PORT = process.env.PORT||3000;
-const {connection} = require("./config");
+const {asyncQueryMethod} = require("./util");
+const Graph = require("./Graph");
+const {getAdjLists} = require("./util");
+const session = require("express-session");
 
 const app = express();
 const wordlist = new Wordlist(true);
 const random_words = new Wordlist();
 
 app.use(cors());
+app.use(session({
+    secret: 'secrettexthere',
+    saveUninitialized: true,
+    resave: true
+}));
 app.use(body_parser.json())
 app.use(express.static(path.join(__dirname,'/public')));
 app.use(passport.initialize());
@@ -26,7 +35,9 @@ passport.use(new localStrategy((username,password,done)=>{
     asyncQueryMethod("SELECT * FROM users WHERE username = '"+username+"' AND password = '"+sha256(password)+"'")
     .then(rows=>{
         console.log(password);
-        if(rows.length!==1)return done("401 unauthorized access", false);
+        if(rows.length!==1)return done(null, false, {
+            "message": "incorrect credentials"
+        });
         const row = rows[0];
         console.log(row);
         return done(null,username);
@@ -35,15 +46,18 @@ passport.use(new localStrategy((username,password,done)=>{
 }))
 
 const isLoggedIn = (req, res, next) => {
+    console.log(req.isAuthenticated());
     if(req.isAuthenticated()){
         return next()
     }
     return res.status(401).json({"statusCode" : "401", "message" : "not authenticated"})
 }
 
+let graph = new Friends();
+
 //wordlist.list.push(new Word({name: 'grotesque', type: ['noun'], meaning: 'comically or repulsively distorted or ugly', synonyms: ['disfigured']}));
 
-app.post('/api/words', isLoggedIn, (req,res)=>{
+app.post('/api/words', isLoggedIn, (req,res,next)=>{
         if(req.body.username === '')return res.status(400).json({"error": "bad request"});
         asyncQueryMethod("SELECT word_json FROM words WHERE username = '"+req.body.username+"'").then(rows=>{
             for(let row of rows)
@@ -92,19 +106,27 @@ app.post('/api/random-words', (req,res)=>{
     });
 })
 
-const asyncQueryMethod = async (query)=>{
+app.post('/api/get-friends', (req,res)=>{
+    if(req.body.username === '' || req.body.username === undefined)return res.status(400).json({"error": "bad request"});
     try {
-        const result = await connection.query(query);
-        return result;
-    } catch(err){
-        console.log(err);
+        getAdjLists().then((str)=>{
+            graph.adjLists = Graph.Deserialize({str});
+            let number = graph.getNumberFriends(req.body.username);
+            console.log(number); 
+            return res.status(200).json({"number": number});
+        }).catch((err)=>{
+            return res.status(422).json({"error": err});
+        })
+        
+    }catch(err) {
+        return res.status(422).json({"error": err});
     }
-}
-
-const saveAsync = async ()=>{
-    const r = await asyncQueryMethod();
-    return r;
-};
+    // populateFriendsGraph(graph)
+    // .then((pg)=>{
+    //     graph = pg;
+    //     return res.status(200).json({graph});
+    // })
+});
 
 
 //authentication
@@ -129,7 +151,7 @@ passport.deserializeUser(function(id, done) {
     done(null, id);
 });
 
-app.post('/api/login', auth(), (req,res)=>{
+app.post('/api/login', auth(), (req,res,next)=>{
    return res.status(200).json({"username":req.body.username});
 });
 
