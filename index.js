@@ -15,15 +15,22 @@ const {asyncQueryMethod} = require("./util");
 const Graph = require("./Graph");
 const {getAdjLists} = require("./util");
 const session = require("express-session");
+const request = require("request");
 
 const app = express();
 const wordlist = new Wordlist(true);
 const random_words = new Wordlist();
+const filtered_words = new Wordlist();
 
-app.use(cors());
+const url_prod = 'https://vocab-booster-ui.herokuapp.com';
+
+app.use(cors({
+    origin: url_prod,
+    credentials: true,
+  }));
 app.use(session({
     secret: 'secrettexthere',
-    saveUninitialized: true,
+    saveUninitialized: true,      
     resave: true
 }));
 app.use(body_parser.json())
@@ -48,6 +55,7 @@ passport.use(new localStrategy((username,password,done)=>{
 
 const isLoggedIn = (req, res, next) => {
     console.log(req.isAuthenticated());
+    console.log(req.session);
     if(req.isAuthenticated()){
         return next()
     }
@@ -56,21 +64,100 @@ const isLoggedIn = (req, res, next) => {
 
 let graph = new Friends();
 
-//wordlist.list.push(new Word({name: 'grotesque', type: ['noun'], meaning: 'comically or repulsively distorted or ugly', synonyms: ['disfigured']}));
-
+//get words
 app.post('/api/words', isLoggedIn, (req,res,next)=>{
         if(req.body.username === '')return res.status(400).json({"error": "bad request"});
-        asyncQueryMethod("SELECT word_json FROM words WHERE username = '"+req.body.username+"'").then(rows=>{
+        wordlist.list = [];
+        asyncQueryMethod("SELECT word_json FROM words").then(rows=>{
             for(let row of rows)
             {
                 const word = parseJson(row.word_json);
                 wordlist.addWord(word); //hack
             }
+            wordlist.list.sort((a,b)=>{
+                return a.name.localeCompare(b.name);
+            })
             return res.status(200).json({data: wordlist.list});
         }).catch((error)=>{
             console.log(error);
         });
 });
+
+//search for words 
+app.post('/api/search-words', isLoggedIn, (req,res,next)=>{
+    if(req.body.username === '')return res.status(400).json({"error": "bad request"});
+    const type = req.body.type;
+    const keyword = req.body.keyword;
+    filtered_words.list = [];
+    asyncQueryMethod("SELECT word_json FROM words").then(rows=>{
+        for(let row of rows)
+        {
+            const word = parseJson(row.word_json);
+            const regex = new RegExp(keyword, 'gi');
+            switch(type) {
+                case 'Name':
+                    if(word.name.match(regex))
+                    {
+                        console.log(word.name.indexOf(keyword));
+                        filtered_words.addWord(word);
+                    }
+                break;
+            
+                case 'Tags':
+                    for(let tag of word.tags) {
+                        if(tag.tag.match(regex))
+                        {
+                            filtered_words.addWord(word);
+                        }
+                    }
+                break;
+                
+                case 'Meaning':
+                    if(word.meaning.match(regex))
+                    {
+                        filtered_words.addWord(word);
+                    }
+                break;
+
+                case 'Synonyms':
+                    for(let synonym of word.synonyms) {
+                        if(synonym.tag.match(regex))
+                        {
+                            filtered_words.addWord(word);
+                        }
+                    }
+                break;
+
+                case '':
+                    if(
+                    word.name.match(regex) || 
+                    word.meaning.match(regex) 
+                    ) 
+                    filtered_words.addWord(word);
+                    else {
+                        for(let tag of word.tags) {
+                            if(tag.tag.match(regex))
+                                filtered_words.addWord(word);
+                        }
+                        for(let synonym of word.synonyms) {
+                            if(synonym.tag.match(regex))
+                                filtered_words.addWord(word);
+                        }
+                    }
+                break;
+            }
+        }
+        filtered_words.list.sort((a,b)=>{
+            return a.name.localeCompare(b.name);
+        })
+        return res.status(200).json({data: filtered_words.list});
+    }).catch((error)=>{
+        console.log(error);
+    });   
+
+});
+
+//add word
 app.post('/api/add-word', (req,res)=>{
     let word = req.body.word;
     word=parseJson(word);
@@ -92,8 +179,10 @@ app.post('/api/add-word', (req,res)=>{
     return res.status(200).json({"word added!":"awesome"});
 });
 
-app.post('/api/random-words', (req,res)=>{
+//get random words
+app.post('/api/random-words', isLoggedIn, (req,res)=>{
     random_words.list = [];
+    console.log(req.connection.remoteAddress);
     if(req.body.username === '')return res.status(400).json({"error": "bad request"});
     asyncQueryMethod("SELECT word_json FROM words WHERE username = '"+req.body.username+"' ORDER BY RAND() LIMIT 5").then(rows=>{
         for(let row of rows)
@@ -153,6 +242,7 @@ passport.deserializeUser(function(id, done) {
 });
 
 app.post('/api/login', auth(), (req,res,next)=>{
+    req.session.save();
    return res.status(200).json({"username":req.body.username});
 });
 
@@ -163,6 +253,11 @@ app.post('/api/register', (req,res)=>{
     asyncQueryMethod(query).catch((error)=>console.log(error));
     return res.status(200).json({"message": "user added!"});
  });
+ app.get('/logout', isLoggedIn,  function (req, res) {
+    req.logout();
+    req.session.destroy();
+    return res.status(200).json({"message": "logged out"});
+});
 
 
 
