@@ -22,12 +22,33 @@ const wordlist = new Wordlist(true);
 const random_words = new Wordlist();
 const filtered_words = new Wordlist();
 
-const url_prod = 'https://vocab-booster-ui.herokuapp.com';
+const url_prod = 'https://vocab-booster-ui.herokuapp.com,';
 
 app.use(cors({
-    origin: url_prod,
+    origin: verifyOrigin,
     credentials: true,
   }));
+
+// Origin verification generator
+function* verifyOrigin (ctx) {
+    // Get requesting origin hostname
+    var origin = ctx.headers.origin;
+
+    // List of valid origins
+    var validOrigins = ['http://localhost:4200', 
+                        'http://localhost:8080',
+                        'http://localhost:8001', 
+                        'https://vocab-booster-ui.herokuapp.com',
+                        'http://vocab-booster-ui.herokuapp.com',
+                        'https://vocab-booster-ui.herokuapp.com'
+                        ];
+
+    // Make sure it's a valid origin
+    if (validOrigins.indexOf(origin) != -1) {
+       // Set the header to the requested origin 
+        ctx.set('Access-Control-Allow-Origin', origin);
+    }        
+}
 app.use(session({
     secret: 'secrettexthere',
     saveUninitialized: true,      
