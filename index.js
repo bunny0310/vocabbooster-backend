@@ -1,5 +1,5 @@
 const express = require("express");
-const cors = require("kors");
+const cors = require("cors");
 const body_parser = require("body-parser");
 const parseJson = require('parse-json');
 const mysql = require("mysql");
@@ -23,32 +23,21 @@ const random_words = new Wordlist();
 const filtered_words = new Wordlist();
 
 const url_prod = 'https://vocab-booster-ui.herokuapp.com,';
+const validOrigins = [
+];
 
 app.use(cors({
-    origin: verifyOrigin,
+    origin: (origin, callback) => {
+        if (validOrigins.indexOf(origin) === -1) {
+            callback(null, true)
+          } else {
+            callback(new Error('Not allowed by CORS'))
+          }
+    },
     credentials: true,
   }));
 
 // Origin verification generator
-function* verifyOrigin (ctx) {
-    // Get requesting origin hostname
-    var origin = ctx.headers.origin;
-
-    // List of valid origins
-    var validOrigins = ['http://localhost:4200', 
-                        'http://localhost:8080',
-                        'http://localhost:8001', 
-                        'https://vocab-booster-ui.herokuapp.com',
-                        'http://vocab-booster-ui.herokuapp.com',
-                        'https://vocab-booster-ui.herokuapp.com'
-                        ];
-
-    // Make sure it's a valid origin
-    if (validOrigins.indexOf(origin) != -1) {
-       // Set the header to the requested origin 
-        ctx.set('Access-Control-Allow-Origin', origin);
-    }        
-}
 app.use(session({
     secret: 'secrettexthere',
     saveUninitialized: true,      
@@ -113,61 +102,65 @@ app.post('/api/search-words', isLoggedIn, (req,res,next)=>{
     asyncQueryMethod("SELECT word_json FROM words").then(rows=>{
         for(let row of rows)
         {
-            const word = parseJson(row.word_json);
-            const regex = new RegExp(keyword, 'gi');
-            switch(type) {
-                case 'Name':
-                    if(word.name.match(regex))
-                    {
-                        console.log(word.name.indexOf(keyword));
-                        filtered_words.addWord(word);
-                    }
-                break;
-            
-                case 'Tags':
-                    for(let tag of word.tags) {
-                        if(tag.tag.match(regex))
+            try {
+                const word = JSON.parse(row.word_json);
+                const regex = new RegExp(keyword, 'gi');
+                switch(type) {
+                    case 'Name':
+                        if(word.name.match(regex))
                         {
+                            console.log(word.name.indexOf(keyword));
                             filtered_words.addWord(word);
                         }
-                    }
-                break;
+                    break;
                 
-                case 'Meaning':
-                    if(word.meaning.match(regex))
-                    {
-                        filtered_words.addWord(word);
-                    }
-                break;
-
-                case 'Synonyms':
-                    for(let synonym of word.synonyms) {
-                        if(synonym.tag.match(regex))
-                        {
-                            filtered_words.addWord(word);
-                        }
-                    }
-                break;
-
-                case '':
-                    if(
-                    word.name.match(regex) || 
-                    word.meaning.match(regex) 
-                    ) 
-                    filtered_words.addWord(word);
-                    else {
+                    case 'Tags':
                         for(let tag of word.tags) {
                             if(tag.tag.match(regex))
+                            {
                                 filtered_words.addWord(word);
+                            }
                         }
+                    break;
+                    
+                    case 'Meaning':
+                        if(word.meaning.match(regex))
+                        {
+                            filtered_words.addWord(word);
+                        }
+                    break;
+
+                    case 'Synonyms':
                         for(let synonym of word.synonyms) {
                             if(synonym.tag.match(regex))
+                            {
                                 filtered_words.addWord(word);
+                            }
                         }
+                    break;
+
+                    case '':
+                        if(
+                        word.name.match(regex) || 
+                        word.meaning.match(regex) 
+                        ) 
+                        filtered_words.addWord(word);
+                        else {
+                            for(let tag of word.tags) {
+                                if(tag.tag.match(regex))
+                                    filtered_words.addWord(word);
+                            }
+                            for(let synonym of word.synonyms) {
+                                if(synonym.tag.match(regex))
+                                    filtered_words.addWord(word);
+                            }
+                        }
+                    break;
                     }
-                break;
+            } catch (err) {
+                console.log(err, row.word_json);
             }
-        }
+        } 
         filtered_words.list.sort((a,b)=>{
             return a.name.localeCompare(b.name);
         })
