@@ -43,7 +43,8 @@ app.use(session({
     saveUninitialized: true,      
     resave: true,
     cookie : {
-    sameSite: 'none', // THIS is the config you are looing for.
+    sameSite: 'none',
+    secure: true
   }
 }));
 
