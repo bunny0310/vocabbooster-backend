@@ -41,8 +41,12 @@ app.use(cors({
 app.use(session({
     secret: 'secrettexthere',
     saveUninitialized: true,      
-    resave: true
+    resave: true,
+    cookie : {
+    sameSite: 'none', // THIS is the config you are looing for.
+  }
 }));
+
 app.use(body_parser.json())
 app.use(express.static(path.join(__dirname,'/public')));
 app.use(passport.initialize());
