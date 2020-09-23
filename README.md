@@ -1,6 +1,4 @@
 # VocabBooster backend
 
-It gradually becomes frustrating when you have come across so many words in your life and they are always on the tip of your tongue, but you can't seem to recall them when you need them.
-This is where Vocab Booster comes into the picture. Say hi to your personal dictionary that lets you populate new words as and when you come across them. It allows you to add tags so that you 
-can keep a track of where you read that word whether it's a TV show, a subreddit, or a book you just started reading. The home page throws you 5 random words each time you refresh it. More functionalities
-coming soon but the MVP is already up and running.
+It gets frustating when you come across new words and phrases in your life which sound really cool and can leave a powerful indelible impression during conversations but there are so many and you can't figure out how to store them in an organized manner without cluttering the data.
+Vocab Booster is a test-driven nodeJS REST API software that focuses on assisting people with their vocabulary. Deployed to Heroku.
