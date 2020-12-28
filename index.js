@@ -273,6 +273,10 @@ app.post('/api/register', (req,res)=>{
     return res.status(200).json({"message": "logged out"});
 });
 
+app.get('/isLoggedIn', (req, res) => {
+    return res.status(200).json({"status": req.isAuthenticated()});
+});
+
 
 
 
