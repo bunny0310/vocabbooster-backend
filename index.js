@@ -195,6 +195,14 @@ app.post('/api/search-words', isLoggedIn, (req,res,next)=>{
                         }
                     break;
 
+                    case 'Type':
+                        for(let type of word.types) {
+                            if(type.match(regex)) {
+                                filtered_words.addWord(word);
+                            }
+                        }
+                    break;
+
                     case '':
                         if(
                         word.name.match(regex) || 
