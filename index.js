@@ -7,7 +7,8 @@ const sha256 = require("sha256");
 const passport =require("passport");
 const localStrategy =require("passport-local").Strategy;
 const path = require("path");
-const Word = require("./Word/word");
+const {Word, addWord} = require("./models/word");
+const {User} = require("./models/user");
 const Wordlist = require("./Word/word_list");
 const Friends = require("./Graph/friends");
 const PORT = process.env.PORT||3000;
@@ -59,16 +60,13 @@ options.jwtFromRequest = ExtractJWT.fromAuthHeaderAsBearerToken();
 options.secretOrKey = 'secret123'; 
 
 passport.use(new localStrategy((username,password,done)=>{
-    asyncQueryMethod("SELECT * FROM users WHERE username = '"+username+"' AND password = '"+sha256(password)+"'")
-    .then(rows=>{
-        if(rows.length!==1)return done(null, false, {
+    User.find({username, password},
+    (err, rows)=>{
+        if(rows.length !== 1)return done(null, false, {
             "message": "incorrect credentials"
         });
-        const row = rows[0];
-        // console.log(row);
         return done(null,username);
     });
-
 }))
 
 //jwt strategy
@@ -128,19 +126,23 @@ app.get('/isLoggedIn', isLoggedIn, (req, res) => {
 //get words
 app.post('/api/words', isLoggedIn, (req,res,next)=>{
         if(req.body.username === '')return res.status(400).json({"error": "bad request"});
-        wordlist.list = [];
-        asyncQueryMethod("SELECT word_json FROM words WHERE username = '" + req.body.username + "'").then(rows=>{
+        wordlist.list = []; 
+        User.findOne({username: req.body.username}).populate('words').exec(
+            (err, usr) => {
+            if(err) {
+                console.log(err);
+                return res.status(500).json({err});
+            }
+            const rows = usr.words;
             for(let row of rows)
             {
-                const word = parseJson(row.word_json);
+                const word = row;
                 wordlist.addWord(word); //hack
             }
             wordlist.list.sort((a,b)=>{
                 return a.name.localeCompare(b.name);
             })
             return res.status(200).json({data: wordlist.list});
-        }).catch((error)=>{
-            console.log(error);
         });
 });
 
@@ -150,11 +152,18 @@ app.post('/api/search-words', isLoggedIn, (req,res,next)=>{
     const type = req.body.type;
     const keyword = req.body.keyword;
     filtered_words.list = [];
-    asyncQueryMethod("SELECT word_json FROM words").then(rows=>{
+    User.findOne({username: req.body.username}).populate('words').exec(
+    (err, usr) => {
+        if(err) {
+            console.log(err);
+            return res.status(500).json({err});
+        }
+        const rows = usr.words;
+        console.log(rows);
         for(let row of rows)
         {
             try {
-                const word = JSON.parse(row.word_json);
+                const word = row;
                 const regex = new RegExp(keyword, 'gi');
                 switch(type) {
                     case 'Name':
@@ -224,49 +233,32 @@ app.post('/api/search-words', isLoggedIn, (req,res,next)=>{
             return a.name.localeCompare(b.name);
         })
         return res.status(200).json({data: filtered_words.list});
-    }).catch((error)=>{
-        console.log(error);
-    });   
-
+    })  
 });
 
 //add word
 app.post('/api/add-word', isLoggedIn, (req,res)=>{
     let word = req.body.word;
+    const username = req.body.username;
     word=parseJson(word);
-    console.log(typeof word);
-    const word_main = new Word({
-        name: word.name,
-        meaning: word.meaning,
-        sentence: word.sentence,
-        tags: word.tags,
-        synonyms: word.synonyms,
-        types: word.types
-    });
-    //console.log(word_main);
-    wordlist.addWord(word_main);
-    const word_json = JSON.stringify(word_main);
-    asyncQueryMethod("INSERT INTO words (word_json, username) VALUES ('"+word_json+"', '"+req.body.username+"')").catch((error)=>{
-      console.log(error);
-    });
+    addWord(word, username);
     return res.status(200).json({"word added!":"awesome"});
 });
 
 //get random words
 app.post('/api/random-words', isLoggedIn, (req,res)=>{
-    random_words.list = [];
-    console.log(req.connection.remoteAddress);
-    if(req.body.username === '')return res.status(400).json({"error": "bad request"});
-    asyncQueryMethod("SELECT word_json FROM words WHERE username = '"+req.body.username+"' ORDER BY RAND() LIMIT 5").then(rows=>{
-        for(let row of rows)
-        {
-            const word = parseJson(row.word_json);
-            random_words.addWord(word); //hack
+    const username = req.body.username;
+    User.findOne({username}).populate('words')
+    .exec((err, user) => {
+        const words = user.words;
+        for(let i = 0; i < words.length; ++i) {
+            const idx = Math.floor(Math.random() * (words.length - i) + i);
+            const temp = words[i];
+            words[i] = words[idx];
+            words[idx] = temp;
         }
-        return res.status(200).json({data: random_words.list});    
-    }).catch((error)=>{
-        console.log(error);
-    });
+        return res.status(200).json({data: words.slice(0, 5)});
+    })
 })
 
 app.post('/api/get-friends', (req,res)=>{
