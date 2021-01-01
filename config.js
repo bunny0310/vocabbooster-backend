@@ -1,5 +1,6 @@
 const mysql = require("mysql");
 const util = require('util');
+const mongoose = require('mongoose');
 
 const connection  = mysql.createPool({
     connectionLimit : 10,
@@ -11,4 +12,15 @@ const connection  = mysql.createPool({
 
   connection.query = util.promisify(connection.query);
 
-  module.exports = {connection};
+const mongoose_connection = () => {
+  mongoose.connect('mongodb+srv://ikhurana:ishaan123@cluster0.gc8z6.mongodb.net/db?retryWrites=true&w=majority', {useNewUrlParser: true, useUnifiedTopology: true});
+  const db = mongoose.connection;
+db.on('error', console.error.bind(console, 'connection error:'));
+db.once('open', function() {
+  // we're connected!
+  // console.log('Awesome!');
+});
+return mongoose;
+}
+
+  module.exports = {connection, mongoose_connection};
