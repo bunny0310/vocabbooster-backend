@@ -28,8 +28,8 @@ const generateWords = async ({username, random}) => {
 const getWordByName = async (username, name) => {
     const user = await User.findOne({username});
     const id = user._id;
-    const word = await Word.findOne({name: {$regex: '.*' + name + '.*', $options: 'i'}, user: id});
-    return word;
+    const words = await Word.find({name: {$regex: '.*' + name + '.*', $options: 'i'}, user: id});
+    return words;
 }
 
 module.exports = {asyncQueryMethod, generateWords, getWordByName};
