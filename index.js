@@ -288,8 +288,13 @@ app.post('/api/random-words', isLoggedIn, (req,res)=>{
     if(username === undefined || username === '') {
         return res.status(400).json({"message": "incorrect JSON, username missing"});
     }
-    const result = generateWords({username, random: true});
-    return res.status(200).json({data: result});
+    generateWords({username, random: true})
+    .then(result => {
+        return res.status(200).json({data: result});
+    })
+    .catch(err => {
+        console.log(err);
+    })
 })
 
 
