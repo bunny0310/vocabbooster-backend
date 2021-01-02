@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+//npm packages
 const body_parser = require("body-parser");
 const parseJson = require('parse-json');
 const mysql = require("mysql");
@@ -7,20 +8,19 @@ const sha256 = require("sha256");
 const passport =require("passport");
 const localStrategy =require("passport-local").Strategy;
 const path = require("path");
-const {Word, addWord} = require("./models/word");
-const {User} = require("./models/user");
-const Wordlist = require("./Word/word_list");
-const Friends = require("./Graph/friends");
 const PORT = process.env.PORT||3000;
-const {asyncQueryMethod} = require("./util");
-const Graph = require("./Graph");
-const {getAdjLists} = require("./util");
 const session = require("express-session");
 const request = require("request");
 const passportJWT = require('passport-jwt');
 const ExtractJWT = require('passport-jwt').ExtractJwt;
 const JWTStrategy = passportJWT.Strategy;
 const jwt = require('jsonwebtoken');
+
+//custom modules
+const {Word, addWord} = require("./models/word");
+const {User} = require("./models/user");
+const {generateWords, getWordByName, getWords} = require("./util");
+const Wordlist = require("./Word/word_list");
 
 const app = express();
 const wordlist = new Wordlist(true);
@@ -80,9 +80,6 @@ passport.use(new JWTStrategy(options, function(jwtPayload, done) {
         return done(null, jwtPayload);
 }))
 
-
-let graph = new Friends();
-
 //authentication
 app.post('/api/login', function(req, res, next) {
     passport.authenticate('local', {session: false}, function(err, user, info) {
@@ -130,25 +127,8 @@ app.get('/isLoggedIn', isLoggedIn, (req, res) => {
 
 //get words
 app.post('/api/words', isLoggedIn, (req,res,next)=>{
-        if(req.body.username === '')return res.status(400).json({"error": "bad request"});
-        wordlist.list = []; 
-        User.findOne({username: req.body.username}).populate('words').exec(
-            (err, usr) => {
-            if(err) {
-                console.log(err);
-                return res.status(500).json({err});
-            }
-            const rows = usr.words;
-            for(let row of rows)
-            {
-                const word = row;
-                wordlist.addWord(word); //hack
-            }
-            wordlist.list.sort((a,b)=>{
-                return a.name.localeCompare(b.name);
-            })
-            return res.status(200).json({data: wordlist.list});
-        });
+    if(req.body.username === '')return res.status(400).json({"error": "bad request"});
+    getWords(req.body.username);
 });
 
 //search for words 
@@ -241,6 +221,58 @@ app.post('/api/search-words', isLoggedIn, (req,res,next)=>{
     })  
 });
 
+//search for words v2
+app.post('/api/search', isLoggedIn, (req, res, next) => {
+    const username = req.body.username;
+    if(username === undefined || username === '') {
+        return res.status(400).json({"message": "incorrect JSON, username missing"});
+    }
+
+    const options = req.body.options;
+    if(options === undefined) {
+        return res.status(400).json({"message": "incorrect JSON, options missing"});
+    }    
+    if(options.random === true) {
+        generateWords({username, random: true})
+        .then((results) => {
+            return res.status(200).json({data: results});
+        })
+        .catch((err)=>{
+            console.log(err);
+        })
+    }
+     else {
+         if(options.name && options.name !== '') {
+             const word = getWordByName(options.name);
+             const ans = [];
+             if(word !== null) {
+                 ans.push(word);
+             }
+             return res.status(200).json({data: ans});
+         }
+        // //  generateWords({username, random: false})
+        // //  .then((results)=>{
+        // //     return res.status(200).json({data: results});
+        // //  })
+        //  .catch((err)=>{
+        //      console.log(err);
+        //  })
+        User.findOne({username}, (err, usr) => {
+            const id = usr._id;
+            Word.find({tags: {$regex: '.*' + options.tag + '.*', $options: 'i'}, 
+            synonyms: {$regex: '.*' + options.synonym + '.*', $options: 'i'},
+            types: {$regex: '.*' + options.type + '.*', $options: 'i'},
+            sentences: {$regex: '.*' + options.sentence + '.*', $options: 'i'},
+            user: id}, 
+            (err, docs)=>{
+                console.log(docs);
+                 return res.status(200).json({data: docs});
+            })
+        });
+     }
+    //  return res.status(200).json({data: []});
+})
+
 //add word
 app.post('/api/add-word', isLoggedIn, (req,res)=>{
     let word = req.body.word;
@@ -253,41 +285,12 @@ app.post('/api/add-word', isLoggedIn, (req,res)=>{
 //get random words
 app.post('/api/random-words', isLoggedIn, (req,res)=>{
     const username = req.body.username;
-    User.findOne({username}).populate('words')
-    .exec((err, user) => {
-        const words = user.words;
-        for(let i = 0; i < words.length; ++i) {
-            const idx = Math.floor(Math.random() * (words.length - i) + i);
-            const temp = words[i];
-            words[i] = words[idx];
-            words[idx] = temp;
-        }
-        return res.status(200).json({data: words.slice(0, 5)});
-    })
-})
-
-app.post('/api/get-friends', (req,res)=>{
-    if(req.body.username === '' || req.body.username === undefined)return res.status(400).json({"error": "bad request"});
-    try {
-        getAdjLists().then((str)=>{
-            graph.adjLists = Graph.Deserialize({str});
-            let number = graph.getNumberFriends(req.body.username);
-            console.log(number); 
-            return res.status(200).json({"number": number});
-        }).catch((err)=>{
-            return res.status(422).json({"error": err});
-        })
-        
-    }catch(err) {
-        return res.status(422).json({"error": err});
+    if(username === undefined || username === '') {
+        return res.status(400).json({"message": "incorrect JSON, username missing"});
     }
-    // populateFriendsGraph(graph)
-    // .then((pg)=>{
-    //     graph = pg;
-    //     return res.status(200).json({graph});
-    // })
-});
-
+    const result = generateWords({username, random: true});
+    return res.status(200).json({data: result});
+})
 
 
 //listen 

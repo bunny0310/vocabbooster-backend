@@ -1,4 +1,6 @@
 const {connection} = require("./config");
+const {User} = require("./models/user");
+const {Word} = require("./models/word");
 const asyncQueryMethod = async (query)=>{
     try {
         const result = await connection.query(query);
@@ -8,48 +10,30 @@ const asyncQueryMethod = async (query)=>{
     }
 }
 
-const getAdjLists = async()=>{
-    const promise = await new Promise((resolve,reject)=>{
-        asyncQueryMethod("Select * from graph_json")
-        .then((rows)=>{
-            if(rows.length>0)
-                resolve(rows[0].json);
-                else throw "graph json null!";
-        }).catch((err)=>{
-            reject(err);
-        });
-    })
-    return promise;
+const generateWords = async ({username, random}) => {
+    const user = await User.findOne({username}).populate('words');
+    const words = user.words;
+    if(random) {
+        for(let i = 0; i < words.length; ++i) {
+            const idx = Math.floor(Math.random() * (words.length - i) + i);
+            const temp = words[i];
+            words[i] = words[idx];
+            words[idx] = temp;
+        }
+        return words.slice(0, 5);
+    }
+    return words;
+};
+
+const getWordByName = (username, name) => {
+    User.findOne({username})
+    .exec((err, user) => {
+        const id = user._id;
+        Word.findOne({user: id, name}, (err, word)=>{
+            return word;
+        })
+    });
+    return null;
 }
 
-const updateAdjListsInDB = async(str)=>{
-    const promise = await new Promise((resolve,reject)=>{
-        asyncQueryMethod("Update graph_json SET json = '"+str+"' WHERE idgraph_json=0")
-        .then((rows)=>{
-            resolve("success");
-        }).catch((err)=>{
-            reject(err);
-            throw err;
-        });
-    })
-    return promise;
-}
-
-const getUsers = async()=>{
-    const arr = [];
-    const promise = await new Promise((resolve,reject)=>{
-        asyncQueryMethod("SELECT * from users")
-        .then((rows)=>{
-            for(let row of rows) {
-                arr.push(row.username);
-            }
-            resolve(arr);
-        }).catch((err)=>{
-            reject(err);
-            throw err;
-        });
-    })
-    return promise;
-}
-
-module.exports = {asyncQueryMethod, getAdjLists, updateAdjListsInDB, getUsers};
+module.exports = {asyncQueryMethod, generateWords, getWordByName};
