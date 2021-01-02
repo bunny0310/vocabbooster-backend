@@ -252,25 +252,20 @@ app.post('/api/search', isLoggedIn, (req, res, next) => {
                 console.log(err);
             })           
          }
-        // //  generateWords({username, random: false})
-        // //  .then((results)=>{
-        // //     return res.status(200).json({data: results});
-        // //  })
-        //  .catch((err)=>{
-        //      console.log(err);
-        //  })
-        User.findOne({username}, (err, usr) => {
-            const id = usr._id;
-            Word.find({tags: {$regex: '.*' + options.tag + '.*', $options: 'i'}, 
-            synonyms: {$regex: '.*' + options.synonym + '.*', $options: 'i'},
-            types: {$regex: '.*' + options.type + '.*', $options: 'i'},
-            sentences: {$regex: '.*' + options.sentence + '.*', $options: 'i'},
-            user: id}, 
-            (err, docs)=>{
-                console.log(docs);
-                 return res.status(200).json({data: docs});
-            })
-        });
+         else {
+            User.findOne({username}, (err, usr) => {
+                const id = usr._id;
+                Word.find({tags: {$regex: '.*' + options.tag + '.*', $options: 'i'}, 
+                synonyms: {$regex: '.*' + options.synonym + '.*', $options: 'i'},
+                types: {$regex: '.*' + options.type + '.*', $options: 'i'},
+                sentences: {$regex: '.*' + options.sentence + '.*', $options: 'i'},
+                user: id}, 
+                (err, docs)=>{
+                    console.log(docs);
+                    return res.status(200).json({data: docs});
+                })
+            });
+         }
      }
     //  return res.status(200).json({data: []});
 })
