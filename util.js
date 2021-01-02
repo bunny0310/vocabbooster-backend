@@ -25,15 +25,11 @@ const generateWords = async ({username, random}) => {
     return words;
 };
 
-const getWordByName = (username, name) => {
-    User.findOne({username})
-    .exec((err, user) => {
-        const id = user._id;
-        Word.findOne({user: id, name}, (err, word)=>{
-            return word;
-        })
-    });
-    return null;
+const getWordByName = async (username, name) => {
+    const user = await User.findOne({username});
+    const id = user._id;
+    const word = await Word.findOne({name: name, user: id});
+    return word;
 }
 
 module.exports = {asyncQueryMethod, generateWords, getWordByName};

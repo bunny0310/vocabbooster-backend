@@ -239,12 +239,13 @@ app.post('/api/search', isLoggedIn, (req, res, next) => {
     }
      else {
          if(options.name && options.name !== '') {
-             const word = getWordByName(options.name);
-             const ans = [];
-             if(word !== null) {
-                 ans.push(word);
-             }
-             return res.status(200).json({data: ans});
+            getWordByName(username, options.name)
+            .then((word)=>{
+                return res.status(200).json({data: [word]});
+            })
+            .catch((err)=>{
+                console.log(err);
+            })           
          }
         // //  generateWords({username, random: false})
         // //  .then((results)=>{
