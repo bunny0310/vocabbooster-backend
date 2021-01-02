@@ -28,7 +28,7 @@ const generateWords = async ({username, random}) => {
 const getWordByName = async (username, name) => {
     const user = await User.findOne({username});
     const id = user._id;
-    const word = await Word.findOne({name: name, user: id});
+    const word = await Word.findOne({name: {$regex: '.*' + name + '.*', $options: 'i'}, user: id});
     return word;
 }
 
