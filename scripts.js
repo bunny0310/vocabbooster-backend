@@ -20,4 +20,16 @@ const mongoose = mongoose_connection();
 // User.findOne({username: 'ishkhur'}).populate('words').exec((err, docs)=>{
 //     console.log(docs.words[docs.words.length - 1]);
 // })
+// Word.find({}, (err, docs)=>{
+//     for(let word of docs) {
+//         const synonyms = word.sentences;
+//         const tagsNew = [];
+//         for(let tag of synonyms) {
+//             tagsNew.push(tag.tag);
+//         }
+//         Word.updateOne({_id: word.id}, {sentences: tagsNew}, (err, msg)=>{
+//             console.log(msg);
+//         })
+//     }
+// })
 
