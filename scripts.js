@@ -33,3 +33,7 @@ const mongoose = mongoose_connection();
 //     }
 // })
 
+Word.find({tags: 'Friends'}, (err, docs)=>{
+    console.log(docs);
+})
+

@@ -132,96 +132,6 @@ app.post('/api/words', isLoggedIn, (req,res,next)=>{
     getWords(req.body.username);
 });
 
-//search for words 
-app.post('/api/search-words', isLoggedIn, (req,res,next)=>{
-    if(req.body.username === '')return res.status(400).json({"error": "bad request"});
-    const type = req.body.type;
-    const keyword = req.body.keyword;
-    filtered_words.list = [];
-    User.findOne({username: req.body.username}).populate('words').exec(
-    (err, usr) => {
-        if(err) {
-            console.log(err);
-            return res.status(500).json({err});
-        }
-        const rows = usr.words;
-        console.log(rows);
-        for(let row of rows)
-        {
-            try {
-                const word = row;
-                const regex = new RegExp(keyword, 'gi');
-                switch(type) {
-                    case 'Name':
-                        if(word.name.match(regex))
-                        {
-                            console.log(word.name.indexOf(keyword));
-                            filtered_words.addWord(word);
-                        }
-                    break;
-                
-                    case 'Tags':
-                        for(let tag of word.tags) {
-                            if(tag.tag.match(regex))
-                            {
-                                filtered_words.addWord(word);
-                            }
-                        }
-                    break;
-                    
-                    case 'Meaning':
-                        if(word.meaning.match(regex))
-                        {
-                            filtered_words.addWord(word);
-                        }
-                    break;
-
-                    case 'Synonyms':
-                        for(let synonym of word.synonyms) {
-                            if(synonym.tag.match(regex))
-                            {
-                                filtered_words.addWord(word);
-                            }
-                        }
-                    break;
-
-                    case 'Type':
-                        for(let type of word.types) {
-                            if(type.match(regex)) {
-                                filtered_words.addWord(word);
-                            }
-                        }
-                    break;
-
-                    case '':
-                        if(
-                        word.name.match(regex) || 
-                        word.meaning.match(regex) 
-                        ) 
-                        filtered_words.addWord(word);
-                        else {
-                            for(let tag of word.tags) {
-                                if(tag.tag.match(regex))
-                                    filtered_words.addWord(word);
-                            }
-                            for(let synonym of word.synonyms) {
-                                if(synonym.tag.match(regex))
-                                    filtered_words.addWord(word);
-                            }
-                        }
-                    break;
-                    }
-            } catch (err) {
-                console.log(err, row.word_json);
-            }
-        } 
-        filtered_words.list.sort((a,b)=>{
-            return a.name.localeCompare(b.name);
-        })
-        return res.status(200).json({data: filtered_words.list});
-    })  
-});
-
 //search for words v2
 app.post('/api/search', isLoggedIn, (req, res, next) => {
     const username = req.body.username;
@@ -292,6 +202,23 @@ app.post('/api/random-words', isLoggedIn, (req,res)=>{
     .catch(err => {
         console.log(err);
     })
+})
+
+app.post('/api/wordcloud', isLoggedIn, (req, res) => {
+    const username = req.body.username;
+    if(username === undefined || username === '') {
+        return res.status(400).json({"message": "incorrect JSON, username missing"});
+    }
+    const options = {
+        uri: 'https://vb-dashboard.herokuapp.com/tags',
+        method: 'POST',
+        json: {
+          "username": username
+        }
+      };
+    request.post(options, (err, result, body) => {
+        return res.status(200).json({msg: body.msg});
+    });
 })
 
 
