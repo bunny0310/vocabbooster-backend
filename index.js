@@ -221,6 +221,52 @@ app.post('/api/wordcloud', isLoggedIn, (req, res) => {
     });
 })
 
+app.post('/api/acc-info', isLoggedIn, (req, res) => {
+    const username = req.body.username;
+    if(username === undefined || username === '') {
+        return res.status(400).json({"message": "incorrect JSON, username missing"});
+    }
+    const recent = req.body.recent;
+    const json = {
+        "username": username
+    }
+    if(recent === true) {
+        json["recent"] = true;
+    }
+    const options = {
+        uri: 'https://vb-dashboard.herokuapp.com/acc-info',
+        method: 'POST',
+        json: json
+      };
+
+      request.post(options, (err, result, body) => {
+        return res.status(200).json({msg: body.msg});
+    });
+})
+
+app.post('/api/topmost-tags', isLoggedIn, (req, res) => {
+    const username = req.body.username;
+    if(username === undefined || username === '') {
+        return res.status(400).json({"message": "incorrect JSON, username missing"});
+    }
+    const recent = req.body.recent;
+    const json = {
+        "username": username
+    }
+    if(recent === true) {
+        json["recent"] = true;
+    }
+    const options = {
+        uri: 'https://vb-dashboard.herokuapp.com/monthly-tags-info',
+        method: 'POST',
+        json: json
+      };
+
+      request.post(options, (err, result, body) => {
+        return res.status(200).json({msg: body.msg});
+    });
+})
+
 
 //listen 
 app.listen(PORT, ()=>{
