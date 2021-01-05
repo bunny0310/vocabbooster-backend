@@ -129,7 +129,13 @@ app.get('/isLoggedIn', isLoggedIn, (req, res) => {
 //get words
 app.post('/api/words', isLoggedIn, (req,res,next)=>{
     if(req.body.username === '')return res.status(400).json({"error": "bad request"});
-    getWords(req.body.username);
+    generateWords({username: req.body.username , random: false})
+    .then(result => {
+        return res.status(200).json({data: result});
+    })
+    .catch(err => {
+        console.log(err);
+    })
 });
 
 //search for words v2
