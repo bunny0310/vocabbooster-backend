@@ -159,19 +159,13 @@ app.post('/api/search', isLoggedIn, (req, res, next) => {
         })
     }
      else {
-         if(options.name && options.name !== '') {
-            getWordByName(username, options.name)
-            .then((words)=>{
-                return res.status(200).json({data: words});
-            })
-            .catch((err)=>{
-                console.log(err);
-            })           
-         }
-         else {
             User.findOne({username}, (err, usr) => {
                 const id = usr._id;
-                Word.find({tags: {$regex: '.*' + options.tag + '.*', $options: 'i'}, 
+                console.log(options.tag);
+                Word.find(
+                {tags: {$regex: '.*' + options.tag + '.*', $options: 'i'}, 
+                 name: {$regex: '.*' + options.name + '.*', $options: 'i'}, 
+                meaning: {$regex: '.*' + options.meaning + '.*', $options: 'i'}, 
                 synonyms: {$regex: '.*' + options.synonym + '.*', $options: 'i'},
                 types: {$regex: '.*' + options.type + '.*', $options: 'i'},
                 sentences: {$regex: '.*' + options.sentence + '.*', $options: 'i'},
@@ -181,7 +175,6 @@ app.post('/api/search', isLoggedIn, (req, res, next) => {
                     return res.status(200).json({data: docs});
                 })
             });
-         }
      }
     //  return res.status(200).json({data: []});
 })
