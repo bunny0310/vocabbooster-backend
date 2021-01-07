@@ -33,7 +33,7 @@ const mongoose = mongoose_connection();
 //     }
 // })
 
-Word.find({tags: 'Friends'}, (err, docs)=>{
+Word.find({name: 'right up my alley'}, (err, docs)=>{
     console.log(docs);
 })
 

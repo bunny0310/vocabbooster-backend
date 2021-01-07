@@ -105,11 +105,16 @@ app.post('/api/login', function(req, res, next) {
 })
 
 app.post('/api/register', (req,res)=>{
-    if(req.body.username==='' || req.body.password==='')
+    if(req.body.username==='' || req.body.password==='' || req.body.firstName === '' || req.body.lastName === '' || req.body.email === '')
         return res.status(400).json({"error": "null values found"});
-    const query = "INSERT INTO users (username,password) VALUES ('"+req.body.username+"', '"+sha256(req.body.password)+"')";
-    asyncQueryMethod(query).catch((error)=>console.log(error));
-    return res.status(200).json({"message": "user added!"});
+
+    const user = new User(req.body);
+    user.save((err=>{
+        if(err)
+            return res.status(500).json({"msg": err});
+        return res.status(200).json({"message": "user added!"});
+    }))
+    
  });
 
  //middleware to verify authentication
@@ -165,10 +170,10 @@ app.post('/api/search', isLoggedIn, (req, res, next) => {
                 Word.find(
                 {tags: {$regex: '.*' + options.tag + '.*', $options: 'i'}, 
                  name: {$regex: '.*' + options.name + '.*', $options: 'i'}, 
-                meaning: {$regex: '.*' + options.meaning + '.*', $options: 'i'}, 
-                synonyms: {$regex: '.*' + options.synonym + '.*', $options: 'i'},
-                types: {$regex: '.*' + options.type + '.*', $options: 'i'},
-                sentences: {$regex: '.*' + options.sentence + '.*', $options: 'i'},
+                // meaning: {$regex: '.*' + options.meaning + '.*', $options: 'i'}, 
+                // synonyms: {$regex: '.*' + options.synonym + '.*', $options: 'i'},
+                // types: {$regex: '.*' + options.type + '.*', $options: 'i'},
+                // sentences: {$regex: '.*' + options.sentence + '.*', $options: 'i'},
                 user: id}, 
                 (err, docs)=>{
                     console.log(docs);
