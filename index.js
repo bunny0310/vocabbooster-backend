@@ -170,10 +170,10 @@ app.post('/api/search', isLoggedIn, (req, res, next) => {
                 Word.find(
                 {tags: {$regex: '.*' + options.tag + '.*', $options: 'i'}, 
                  name: {$regex: '.*' + options.name + '.*', $options: 'i'}, 
-                // meaning: {$regex: '.*' + options.meaning + '.*', $options: 'i'}, 
-                // synonyms: {$regex: '.*' + options.synonym + '.*', $options: 'i'},
-                // types: {$regex: '.*' + options.type + '.*', $options: 'i'},
-                // sentences: {$regex: '.*' + options.sentence + '.*', $options: 'i'},
+                 meaning: {$regex: '.*' + options.meaning + '.*', $options: 'i'}, 
+                 synonyms: {$regex: '.*' + options.synonym + '.*', $options: 'i'},
+                 types: {$regex: '.*' + options.type + '.*', $options: 'i'},
+                 sentences: {$regex: '.*' + options.sentence + '.*', $options: 'i'},
                 user: id}, 
                 (err, docs)=>{
                     console.log(docs);
