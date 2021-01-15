@@ -131,15 +131,12 @@ app.get('/isLoggedIn', isLoggedIn, (req, res) => {
     return res.status(200).json({"message": "logged in!"});
 });
 
-
 //get words
 app.post('/api/words', isLoggedIn, (req,res,next)=>{
     if(req.body.username === '')return res.status(400).json({"error": "bad request"});
-    if(req.body.limit === '')return res.status(400).json({"error": "bad request"});
-    if(req.body.offset === '')return res.status(400).json({"error": "bad request"});
     generateWords({username: req.body.username , random: false})
     .then(result => {
-        return res.status(200).json({data: result.slice(req.body.offset, req.body.offset + req.body.limit), size: result.length});
+        return res.status(200).json({data: result});
     })
     .catch(err => {
         console.log(err);
@@ -156,34 +153,34 @@ app.post('/api/search', isLoggedIn, (req, res, next) => {
     const options = req.body.options;
     if(options === undefined) {
         return res.status(400).json({"message": "incorrect JSON, options missing"});
-    }   
-    
-    const offset = req.body.offset;
-    if(offset === undefined) {
-        return res.status(400).json({"message": "incorrect JSON, offset missing"});
-    }  
-
-    const limit = req.body.limit;
-    if(limit === undefined) {
-        return res.status(400).json({"message": "incorrect JSON, limit missing"});
-    }  
-
-
-    User.findOne({username}, (err, usr) => {
-        const id = usr._id;
-        console.log(options.tag);
-        Word.find(
-        {tags: {$regex: '.*' + options.tag + '.*', $options: 'i'}, 
-            name: {$regex: '.*' + options.name + '.*', $options: 'i'}, 
-        meaning: {$regex: '.*' + options.meaning + '.*', $options: 'i'}, 
-        synonyms: {$regex: '.*' + options.synonym + '.*', $options: 'i'},
-        types: {$regex: '.*' + options.type + '.*', $options: 'i'},
-        sentences: {$regex: '.*' + options.sentence + '.*', $options: 'i'},
-        user: id}, 
-        (err, docs)=>{
-            return res.status(200).json({data: docs.slice(offset, offset + limit), size: result.length});
+    }    
+    if(options.random === true) {
+        generateWords({username, random: true})
+        .then((results) => {
+            return res.status(200).json({data: results});
         })
-    });
+        .catch((err)=>{
+            console.log(err);
+        })
+    }
+     else {
+            User.findOne({username}, (err, usr) => {
+                const id = usr._id;
+                console.log(options.tag);
+                Word.find(
+                {tags: {$regex: '.*' + options.tag + '.*', $options: 'i'}, 
+                 name: {$regex: '.*' + options.name + '.*', $options: 'i'}, 
+                // meaning: {$regex: '.*' + options.meaning + '.*', $options: 'i'}, 
+                // synonyms: {$regex: '.*' + options.synonym + '.*', $options: 'i'},
+                // types: {$regex: '.*' + options.type + '.*', $options: 'i'},
+                // sentences: {$regex: '.*' + options.sentence + '.*', $options: 'i'},
+                user: id}, 
+                (err, docs)=>{
+                    console.log(docs);
+                    return res.status(200).json({data: docs});
+                })
+            });
+     }
     //  return res.status(200).json({data: []});
 })
 

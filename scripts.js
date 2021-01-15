@@ -33,10 +33,7 @@ const mongoose = mongoose_connection();
 //     }
 // })
 
-const limit = 5;
-const offset = 0;
-Word.find({}, (err, docs)=>{
-    console.log(docs.slice(offset, offset + limit));
+Word.find({name: 'right up my alley'}, (err, docs)=>{
+    console.log(docs);
 })
-
 
