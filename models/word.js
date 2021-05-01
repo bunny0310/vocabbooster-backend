@@ -1,5 +1,6 @@
 const {mongoose_connection} = require("../config");
 const {User} = require("../models/user");
+const {wordNamesCache} = require("../init");
 
 const mongoose = mongoose_connection();
 
@@ -18,34 +19,44 @@ const schema = new mongoose.Schema({
 })
 
 const Word = new mongoose.model('Word', schema);
-// const name = "spinter";
-// const word = new Word({name, meaning: 'break into tiny fragments, shatter'});
 
-// console.log(word);
-
-const addWord = (obj, username) => {
-    const name = obj.name;
-    const meaning = obj.meaning;
-    const sentences = obj.sentence;
-    const types = obj.types;
-    const tags = obj.tags;
-    const synonyms = obj.synonyms;
-    const word = new Word({name, meaning, sentences, tags, types, synonyms});
-    User.findOne({username}, (err, docs)=>{
-        const id = docs._id;
-        word.user = id;
-        word.save((err=>{
-            console.log(err);
-        }))
-        console.log(word);
-    });
-    User.findOne({username}, (err, user)=>{
+const addWord = async (obj, userId) => {
+    try {
+        const name = obj.name;
+        const meaning = obj.meaning;
+        const sentences = obj.sentence;
+        const types = obj.types;
+        const tags = obj.tags;
+        const synonyms = obj.synonyms;
+        const word = new Word({name, meaning, sentences, tags, types, synonyms});
+        word.user = userId;
+        word.save();
+        const user = await User.findOne({_id: userId});
         const words = user.words;
         words.push(word._id);
-        User.updateOne({username}, {words}, (err, res)=>{
-            console.log(res);
-        });
-    })
+        User.updateOne({_id: userId}, {words});
+
+        // update the cache
+        const set = wordNamesCache.get(userId);
+        if(set != -1) {
+            set.add(word.name);
+        }
+        return {
+            code: 200,
+            json: {
+                msg: "Word added!",
+                status: true
+            }
+        }
+    } catch(err) {
+        return {
+            code: 500,
+            json: {
+                msg: `Internal Server Error - ${err}`,
+                status: false
+            }
+        }
+    }
 }
 
 module.exports = {addWord, Word};
