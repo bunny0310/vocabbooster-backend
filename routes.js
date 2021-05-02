@@ -9,7 +9,9 @@ const jwt = require('jsonwebtoken');
 const {verify} = require("./middleware");
 const {
     getTags,
-    checkWordDuplicate
+    checkWordDuplicate,
+    getWords,
+    getWord
 } = require("./controller");
 
 //authentication
@@ -214,7 +216,6 @@ app.post('/api/topmost-tags', (req, res) => {
 
 //route to get a list of unique tags
 app.get('/api/tags', verify, (req, res) => {
-    console.log(req.query["keyword"])
     getTags(req.user.id, req.query["keyword"])
     .then((data) => {
         return res.status(data.code).json(data.json);
@@ -234,6 +235,34 @@ app.get('/api/uniqueName', verify, (req, res) => {
     .catch((err) => {
         return res.status(err.code).json(err.json); 
     })
+})
+
+app.get('/api/words', verify, (req, res) => {
+    getWords(req.user.id, req.query['mode'], {
+        name: req.query['filterName'],
+        meaning: req.query['filterMeaning'],
+        sentence: req.query['filterSentence'],
+        tag: req.query['filterTag'],
+        synonym: req.query['filterSynonym'],
+        type: req.query['filterType']
+    }, req.query['offset'] == null ? 0 : req.query['offset'])
+    .then((data) => {
+        return res.status(data.code).json(data.json);
+    })
+    .catch((err) => {
+        return res.status(err.code).json(err.json);
+    })
+})
+
+app.get('/api/words/:id', verify, (req, res) => {
+    getWord(req.user.id, req.params['id'])
+    .then((data) => {
+        return res.status(data.code).json(data.json);
+    })
+    .catch((err) => {
+        return res.status(err.code).json(err.json);
+    })
+
 })
 
 module.exports = app;
