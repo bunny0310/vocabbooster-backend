@@ -1,6 +1,6 @@
-const mysql = require("mysql");
 const util = require('util');
 const mongoose = require('mongoose');
+const mysql = require('mysql');
 
 const connection  = mysql.createPool({
     connectionLimit : 10,

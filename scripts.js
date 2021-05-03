@@ -7,15 +7,12 @@ const {User} = require("./models/user");
 
 const mongoose = mongoose_connection();
 
-// asyncQueryMethod("SELECT * from words")
-// .then(rows => {
-//     for(let row of rows) {
-//         addWord(parseJson(row.word_json), row.username);
-//     }
-// })
-// .catch(err => {
-//     console.log(err);
-// })
+//  const test = async () => {
+//      const res = await Word.deleteOne({name: 'Preoccupy'});
+//      console.log(res);
+//  }
+
+//  test();
 
 // User.findOne({username: 'ishkhur'}).populate('words').exec((err, docs)=>{
 //     console.log(docs.words[docs.words.length - 1]);
@@ -33,7 +30,7 @@ const mongoose = mongoose_connection();
 //     }
 // })
 
-Word.find({name: 'right up my alley'}, (err, docs)=>{
-    console.log(docs);
-})
+// Word.find({name: 'right up my alley'}, (err, docs)=>{
+//     console.log(docs);
+// })
 
