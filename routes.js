@@ -168,14 +168,14 @@ app.post('/api/wordcloud', (req, res) => {
     });
 })
 
-app.post('/api/acc-info', (req, res) => {
-    const username = req.body.username;
+app.post('/api/acc-info', verify, (req, res) => {
+    const username = req.user.username;
     if(username === undefined || username === '') {
         return res.status(400).json({"message": "incorrect JSON, username missing"});
     }
     const recent = req.body.recent;
     const json = {
-        "username": username
+        "username": req.user.username
     }
     if(recent === true) {
         json["recent"] = true;
@@ -191,8 +191,8 @@ app.post('/api/acc-info', (req, res) => {
     });
 })
 
-app.post('/api/topmost-tags', (req, res) => {
-    const username = req.body.username;
+app.post('/api/topmost-tags', verify, (req, res) => {
+    const username = req.user.username;
     if(username === undefined || username === '') {
         return res.status(400).json({"message": "incorrect JSON, username missing"});
     }

@@ -23,6 +23,7 @@ const getWords = async (userId, option=null, filter=null, offset=0) => {
             wordsCache.put(userId, map);
             delete map;
         }
+        result = result.reverse();
         if(option === 'r') {
             shuffle(result);
             result = result.slice(0, Math.min(result.length, 5));
@@ -103,7 +104,6 @@ const getWords = async (userId, option=null, filter=null, offset=0) => {
         if(option !== 'r' || option !=='rf') {
             result = result.slice(offset, offset + 5);
         }
-        result = result.reverse();
         return {
             code: 200,
             json: {
