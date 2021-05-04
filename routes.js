@@ -151,11 +151,8 @@ app.post('/api/random-words', verify, (req,res)=>{
     })
 })
 
-app.post('/api/wordcloud', (req, res) => {
-    const username = req.body.username;
-    if(username === undefined || username === '') {
-        return res.status(400).json({"message": "incorrect JSON, username missing"});
-    }
+app.post('/api/wordcloud', verify, (req, res) => {
+    const username = req.user.username;
     const options = {
         uri: 'https://vb-dashboard.herokuapp.com/tags',
         method: 'POST',
@@ -164,15 +161,12 @@ app.post('/api/wordcloud', (req, res) => {
         }
       };
     request.post(options, (err, result, body) => {
-        return res.status(200).json({msg: body.msg});
+        return res.status(body.code).json({msg: body});
     });
 })
 
 app.post('/api/acc-info', verify, (req, res) => {
     const username = req.user.username;
-    if(username === undefined || username === '') {
-        return res.status(400).json({"message": "incorrect JSON, username missing"});
-    }
     const recent = req.body.recent;
     const json = {
         "username": req.user.username
@@ -187,15 +181,12 @@ app.post('/api/acc-info', verify, (req, res) => {
       };
 
       request.post(options, (err, result, body) => {
-        return res.status(200).json({msg: body.msg});
+        return res.status(body.code).json({msg: body});
     });
 })
 
 app.post('/api/topmost-tags', verify, (req, res) => {
     const username = req.user.username;
-    if(username === undefined || username === '') {
-        return res.status(400).json({"message": "incorrect JSON, username missing"});
-    }
     const recent = req.body.recent;
     const json = {
         "username": username
@@ -210,7 +201,7 @@ app.post('/api/topmost-tags', verify, (req, res) => {
       };
 
       request.post(options, (err, result, body) => {
-        return res.status(200).json({msg: body.msg});
+        return res.status(body.code).json({msg: body});
     });
 })
 
