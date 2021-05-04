@@ -1,6 +1,6 @@
 const {mongoose_connection} = require("../config");
 const {User} = require("../models/user");
-const {wordNamesCache} = require("../init");
+const {wordNamesCache, wordsCache} = require("../init");
 
 const mongoose = mongoose_connection();
 
@@ -38,8 +38,14 @@ const addWord = async (obj, userId) => {
 
         // update the cache
         const set = wordNamesCache.get(userId);
+        const map = wordsCache.get(userId);
         if(set != -1) {
             set.add(word.name);
+            delete set;
+        }
+        if(map != -1) {
+            map.set(word._id, word);
+            delete map;
         }
         return {
             code: 200,
