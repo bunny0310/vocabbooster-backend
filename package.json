@@ -22,7 +22,7 @@
     "fetch": "^1.1.0",
     "jsonwebtoken": "^8.5.1",
     "kors": "^1.0.0",
-    "moment": "^2.29.1",
+    "moment": "^2.29.2",
     "mongoose": "^5.11.9",
     "mysql": "^2.18.1",
     "node-fetch": "^2.6.0",
